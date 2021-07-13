@@ -14,7 +14,7 @@ import (
 
 func main() {
 	// 1.忽略证书
-	// 2.阻塞知道拨号成功
+	// 2.阻塞直到拨号成功
 	conn, err := grpc.Dial("localhost:5000", grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalln(err)
