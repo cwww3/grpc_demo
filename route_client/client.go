@@ -129,6 +129,7 @@ func runForth(client pb.RouteGuideClient) {
 }
 
 func readIntFromCommandLine(scanner *bufio.Scanner, num *int32) error {
+	// block for user input
 	if scanner.Scan() {
 		text := scanner.Text()
 		i, err := strconv.ParseInt(text, 10, 32)
