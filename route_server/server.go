@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"google.golang.org/protobuf/proto"
 	"io"
 	"log"
@@ -64,19 +65,32 @@ func (s *Server) RecordRoute(stream pb.RouteGuide_RecordRouteServer) error {
 	return nil
 }
 func (s *Server) Recommend(stream pb.RouteGuide_RecommendServer) error {
+	var n int
 	for true {
 		request, err := stream.Recv()
 		if err == io.EOF {
+			fmt.Println("receive eof break")
 			break
 		}
 		if err != nil {
+			fmt.Println("receive err", err)
 			return err
 		}
 		feature, err := s.RecommendOnce(request)
 		if err != nil {
 			return err
 		}
-		return stream.Send(feature)
+		err = stream.Send(feature)
+		if err == io.EOF {
+			fmt.Println("send eof break")
+			break
+		}
+		if err != nil {
+			fmt.Println("send err", err)
+			return err
+		}
+		n++
+		fmt.Println("Request :", n)
 	}
 	return nil
 }

@@ -3,12 +3,14 @@ package main
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	pb "github.com/cwww3/grpc_demo/route"
 	"google.golang.org/grpc"
 	"io"
 	"log"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -86,40 +88,92 @@ func runForth(client pb.RouteGuideClient) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	go func() {
-		feature, err := stream.Recv()
-		if err != nil {
-			log.Fatalln(err)
+	defer func() {
+		if err = stream.CloseSend(); err != nil {
+			log.Fatalln("close err ", err)
 		}
-		fmt.Println("Recommend: ", feature)
 	}()
 
-	reader := bufio.NewReader(os.Stdin)
+	// receive from server
+	go func() {
+		for true {
+			feature, err := stream.Recv()
+			if err != nil {
+				log.Fatalln(err)
+			}
+			fmt.Println("Recommend: ", feature)
+		}
+	}()
 
+	scanner := bufio.NewScanner(os.Stdin)
+
+	var n int
+
+	// send to server
 	for true {
-		var mode int32
 		var request = pb.RecommendationRequest{
 			Point: new(pb.Point),
 		}
-		fmt.Print("Enter Mode (0 for farthest 1 for nearest) : ")
-		readIntFromCommandLine(reader, &mode)
-		request.Mode = pb.RecommendationMode(mode)
-		fmt.Print("Enter X: ")
-		readIntFromCommandLine(reader, &request.Point.X)
-		fmt.Print("Enter Y: ")
-		readIntFromCommandLine(reader, &request.Point.Y)
-
+		console(scanner, &request)
 		if err := stream.Send(&request); err != nil {
 			log.Fatalln(err)
 		}
 		time.Sleep(time.Millisecond * 1000)
+
+		n++
+		// test client close
+		if n == 5 {
+			break
+		}
 	}
 }
 
-func readIntFromCommandLine(reader *bufio.Reader, num *int32) {
-	_, err := fmt.Fscanf(reader, "%d\n", num)
-	if err != nil {
-		log.Fatalln(err)
+func readIntFromCommandLine(scanner *bufio.Scanner, num *int32) error {
+	if scanner.Scan() {
+		text := scanner.Text()
+		i, err := strconv.ParseInt(text, 10, 32)
+		if err != nil {
+			return err
+		}
+		*num = int32(i)
+		return nil
+	} else {
+		return errors.New("scan nil")
+	}
+}
+
+func console(scanner *bufio.Scanner, request *pb.RecommendationRequest) {
+	var (
+		mode       int32
+		f1, f2, f3 bool
+		err        error
+	)
+
+	for !f1 {
+		fmt.Print("Enter Mode (0 for farthest 1 for nearest) : ")
+		if err = readIntFromCommandLine(scanner, &mode); err != nil {
+			fmt.Println(err)
+			continue
+		}
+		f1 = true
+		request.Mode = pb.RecommendationMode(mode)
+	}
+
+	for !f2 {
+		fmt.Print("Enter X: ")
+		if err = readIntFromCommandLine(scanner, &request.Point.X); err != nil {
+			fmt.Println(err)
+			continue
+		}
+		f2 = true
+	}
+
+	for !f3 {
+		fmt.Print("Enter Y: ")
+		if err = readIntFromCommandLine(scanner, &request.Point.Y); err != nil {
+			fmt.Println(err)
+			continue
+		}
+		f3 = true
 	}
 }
