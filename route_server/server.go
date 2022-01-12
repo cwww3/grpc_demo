@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/proto"
 	"io"
 	"log"
 	"net"
+	"net/http"
 	"time"
 
 	pb "github.com/cwww3/grpc_demo/route"
@@ -147,14 +150,43 @@ func NewServer() *Server {
 }
 
 func main() {
+	// GRPC 服务
 	grpcServer := grpc.NewServer()
 	pb.RegisterRouteGuideServer(grpcServer, NewServer())
-	lis, err := net.Listen("tcp", "localhost:5000")
+	lis, err := net.Listen("tcp", ":7001")
 	if err != nil {
 		log.Fatalln("cannot create a listener")
 	}
 	defer lis.Close()
-	log.Fatalln(grpcServer.Serve(lis))
+	go func() {
+		log.Fatalln(grpcServer.Serve(lis))
+	}()
+
+	// gRPC-Gateway 服务
+	conn, err := grpc.DialContext(
+		context.Background(),
+		"127.0.0.1:7001",
+		grpc.WithBlock(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatalln("Failed to dial server:", err)
+	}
+
+	gwmux := runtime.NewServeMux()
+	// Register Greeter
+	err = pb.RegisterRouteGuideHandler(context.Background(), gwmux, conn)
+	if err != nil {
+		log.Fatalln("Failed to register gateway:", err)
+	}
+
+	gwServer := &http.Server{
+		Addr:    ":7002",
+		Handler: gwmux,
+	}
+
+	log.Println("Serving gRPC-Gateway on http://0.0.0.0:7002")
+	log.Fatalln(gwServer.ListenAndServe())
 }
 
 // TODO 计算两点之间的距离 返回非负数

@@ -4,6 +4,8 @@ option go_package = "github.com/cwww3/grpc_demo/route";
 
 package route;
 
+import "google/api/annotations.proto";
+
 message Point {
   int32 x = 1;
   int32 y = 2;
@@ -37,16 +39,36 @@ message RecommendationRequest {
 
 service RouteGuide {
   // unary
-  rpc GetFeature(Point) returns(Feature) {}
+  rpc GetFeature(Point) returns(Feature) {
+    option (google.api.http) = {
+      post: "/get-feature"
+      body: "*"
+    };
+  }
 
   // server side streaming
-  rpc ListFeatures(Rectangle) returns(stream Feature) {}
+  rpc ListFeatures(Rectangle) returns(stream Feature) {
+    option (google.api.http) = {
+      post: "/list-feature"
+      body: "*"
+    };
+  }
 
   // client side streaming
-  rpc RecordRoute(stream Point) returns(RouteSummary) {}
+  rpc RecordRoute(stream Point) returns(RouteSummary) {
+    option (google.api.http) = {
+      post: "/record-route"
+      body: "*"
+    };
+  }
 
   // bidirectional streaming
-  rpc Recommend(stream RecommendationRequest) returns(stream Feature) {}
+  rpc Recommend(stream RecommendationRequest) returns(stream Feature) {
+    option (google.api.http) = {
+      post: "/recommend"
+      body: "*"
+    };
+  }
 }
 
 

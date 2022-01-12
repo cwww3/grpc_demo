@@ -2,13 +2,17 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	pb "github.com/cwww3/grpc_demo/route"
 	"google.golang.org/grpc"
 	"io"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -17,14 +21,16 @@ import (
 func main() {
 	// 1.忽略证书
 	// 2.阻塞直到拨号成功
-	conn, err := grpc.Dial("localhost:5000", grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial("localhost:7001", grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalln(err)
 	}
 	defer conn.Close()
 
 	client := pb.NewRouteGuideClient(conn)
-	runForth(client)
+	runFirst(client)
+
+	runFirstWeb(http.DefaultClient)
 }
 
 func runFirst(client pb.RouteGuideClient) {
@@ -36,6 +42,21 @@ func runFirst(client pb.RouteGuideClient) {
 		log.Fatalln(err)
 	}
 	fmt.Println(feature)
+}
+
+func runFirstWeb(client *http.Client) {
+	reqData, _ := json.Marshal(struct {
+		X int32 `json:"x"`
+		Y int32 `json:"y"`
+	}{
+		X: 5,
+		Y: 5,
+	})
+	req, _ := http.NewRequest(http.MethodPost, "http://localhost:7002/get-feature", bytes.NewBuffer(reqData))
+	resp, _ := client.Do(req)
+	defer resp.Body.Close()
+	data, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("web data:", string(data))
 }
 
 func runSecond(client pb.RouteGuideClient) {

@@ -1,0 +1,272 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "route/route.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "RouteGuide"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/get-feature": {
+      "post": {
+        "summary": "unary",
+        "operationId": "RouteGuide_GetFeature",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/routeFeature"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/routePoint"
+            }
+          }
+        ],
+        "tags": [
+          "RouteGuide"
+        ]
+      }
+    },
+    "/list-feature": {
+      "post": {
+        "summary": "server side streaming",
+        "operationId": "RouteGuide_ListFeatures",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/routeFeature"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of routeFeature"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/routeRectangle"
+            }
+          }
+        ],
+        "tags": [
+          "RouteGuide"
+        ]
+      }
+    },
+    "/recommend": {
+      "post": {
+        "summary": "bidirectional streaming",
+        "operationId": "RouteGuide_Recommend",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/routeFeature"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of routeFeature"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": " (streaming inputs)",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/routeRecommendationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RouteGuide"
+        ]
+      }
+    },
+    "/record-route": {
+      "post": {
+        "summary": "client side streaming",
+        "operationId": "RouteGuide_RecordRoute",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/routeRouteSummary"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": " (streaming inputs)",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/routePoint"
+            }
+          }
+        ],
+        "tags": [
+          "RouteGuide"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "routeFeature": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/definitions/routePoint"
+        }
+      }
+    },
+    "routePoint": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "y": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "routeRecommendationMode": {
+      "type": "string",
+      "enum": [
+        "GetFarthest",
+        "GetNearest"
+      ],
+      "default": "GetFarthest"
+    },
+    "routeRecommendationRequest": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "$ref": "#/definitions/routeRecommendationMode"
+        },
+        "point": {
+          "$ref": "#/definitions/routePoint"
+        }
+      }
+    },
+    "routeRectangle": {
+      "type": "object",
+      "properties": {
+        "hi": {
+          "$ref": "#/definitions/routePoint"
+        },
+        "lo": {
+          "$ref": "#/definitions/routePoint"
+        }
+      }
+    },
+    "routeRouteSummary": {
+      "type": "object",
+      "properties": {
+        "pointCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "distance": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "elapsedTime": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}
